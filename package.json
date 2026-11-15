@@ -1,0 +1,14 @@
+{
+  "name": "org-anchor-checkpoints",
+  "private": true,
+  "type": "module",
+  "description": "The published, independently checked checkpoints of the ORG daily anchor log.",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "node --test",
+    "verify": "node verify.mjs",
+    "stamp": "node stamp.mjs"
+  }
+}

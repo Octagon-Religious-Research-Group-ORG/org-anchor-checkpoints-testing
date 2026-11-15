@@ -1,0 +1,64 @@
+# Publishes the ORG anchor log's checkpoint once a day (Chunk 16b).
+#
+# It fetches the newest signed checkpoint, keeps it only if it is signed by
+# the key in log.vkey AND only appends to the one already here, commits it,
+# and OpenTimestamps-stamps it. It holds no secret, and the server holds no
+# credential for this repository. A failed run (a refused checkpoint, the
+# server not answering, a stamp that could not be made) makes GitHub email
+# the repository owner.
+name: Publish anchor checkpoint
+
+on:
+  schedule:
+    # Daily, after the server's 03:00 UTC anchor run.
+    - cron: '17 7 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # actions/checkout v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      # actions/setup-node v7.1.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: '24'
+
+      - name: Test the checks themselves
+        run: node --test
+
+      - name: Fetch and check the checkpoint (refuses on any inconsistency)
+        run: node verify.mjs
+
+      - name: OpenTimestamps-stamp new checkpoints, upgrade pending ones
+        id: stamp
+        continue-on-error: true
+        run: node stamp.mjs
+
+      - name: Commit what was kept
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add --all checkpoints
+          if [ -f latest.txt ]; then git add latest.txt; fi
+          if git diff --cached --quiet; then
+            echo 'Nothing new to commit.'
+          else
+            git commit -m "checkpoint $(sed -n 2p latest.txt)"
+            git push
+          fi
+
+      - name: Fail the run if a stamp could not be made
+        if: steps.stamp.outcome == 'failure'
+        run: |
+          echo 'A checkpoint could not be OpenTimestamps-stamped; the next run tries again.'
+          exit 1
