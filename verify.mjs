@@ -36,7 +36,7 @@ export async function main(dir = here, getText = textGetter(), sleep) {
   if (startup === 'timeout' || startup === 'unknown') {
     console.warn(`The server's start-up run: ${startup}; the checkpoint fetched may not include today.`);
   }
-  return publish({ dir, server: config.server, verifier, origin: config.origin, getText });
+  return publish({ dir, server: config.server, verifier, origin: config.origin, getText, previous: config.previous });
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
