@@ -13,11 +13,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseVerifier } from './lib/note.mjs';
-import { CannotMeasure, publish, textGetter } from './lib/publish.mjs';
+import { CannotMeasure, publish, textGetter, waitForStartup } from './lib/publish.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 
-export async function main(dir = here, getText = textGetter()) {
+export async function main(dir = here, getText = textGetter(), sleep) {
   const config = JSON.parse(fs.readFileSync(path.join(dir, 'log.json'), 'utf8'));
   if (!/^https:\/\/[^\s/]+\/\S*[^/]$/.test(config.server ?? '') || config.server.includes('REPLACE')) {
     throw new CannotMeasure('log.json has no server address yet (see README, "Setting it up").');
@@ -30,6 +30,11 @@ export async function main(dir = here, getText = textGetter()) {
   }
   if (verifier.name !== config.origin) {
     throw new CannotMeasure(`log.vkey is for "${verifier.name}", log.json names "${config.origin}".`);
+  }
+  // Wake the server, and let its start-up run build and sign the day (L1).
+  const startup = await waitForStartup({ server: config.server, getText, sleep });
+  if (startup === 'timeout' || startup === 'unknown') {
+    console.warn(`The server's start-up run: ${startup}; the checkpoint fetched may not include today.`);
   }
   return publish({ dir, server: config.server, verifier, origin: config.origin, getText });
 }

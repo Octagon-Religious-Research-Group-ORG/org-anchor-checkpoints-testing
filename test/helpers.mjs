@@ -69,6 +69,7 @@ export function server(state) {
       const { CannotMeasure } = await import('../lib/publish.mjs');
       throw new CannotMeasure(`Could not read ${url} (offline).`);
     }
+    if (url.endsWith('/anchors/log')) return JSON.stringify({ startup: { state: 'done' } });
     if (url.endsWith('/anchors/checkpoint')) return state.note;
     const m = /from=(\d+)&to=(\d+)$/.exec(url);
     const from = Number(m[1]);
