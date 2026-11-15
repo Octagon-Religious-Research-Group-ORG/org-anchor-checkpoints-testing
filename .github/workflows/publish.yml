@@ -48,7 +48,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add --all checkpoints
+          git add --all checkpoints entries
           if [ -f latest.txt ]; then git add latest.txt; fi
           if git diff --cached --quiet; then
             echo 'Nothing new to commit.'

@@ -128,6 +128,8 @@ test('REFUSES to overwrite a stored checkpoint file with another', async () => {
   fs.mkdirSync(path.join(dir, 'checkpoints'));
   fs.writeFileSync(path.join(dir, 'checkpoints', '4.txt'), 'something else');
   fs.writeFileSync(path.join(dir, 'latest.txt'), checkpoint(key, 2, leaves));
+  fs.mkdirSync(path.join(dir, 'entries'));
+  leaves.records.slice(0, 2).forEach((text, i) => fs.writeFileSync(path.join(dir, 'entries', `0000000${i}.txt`), text));
   await refused(dir, { note: checkpoint(key, 4, leaves), leaves }, /already holds a different/);
 });
 

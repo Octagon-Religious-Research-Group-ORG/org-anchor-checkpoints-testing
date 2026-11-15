@@ -43,8 +43,32 @@ function subproof(m, leaves, complete) {
 }
 export const consistency = (m, leaves) => subproof(m, leaves, true);
 
-/** A log of `n` synthetic day records. */
-export const days = (n, salt = '') => Array.from({ length: n }, (_, i) => leaf(Buffer.from(`day ${i}${salt}\n`)));
+const hex = (text) => createHash('sha256').update(text).digest('hex');
+
+/** One synthetic, well-formed v2 day record (hashes and counts only). */
+export function record(i, salt = '') {
+  const day = new Date(Date.UTC(2026, 0, 1) + i * 86_400_000).toISOString().slice(0, 10);
+  return [
+    'org-anchor-day-v2',
+    `day ${day}`,
+    'tree org-anchor-merkle-v2',
+    `root ${hex(`root ${i}${salt}`)}`,
+    'leaves 1',
+    `leafset ${hex(`set ${i}${salt}`)}`,
+    `appended ${day}T04:00:00.000Z`,
+    '',
+  ].join('\n');
+}
+
+/** A log of `n` synthetic days: their leaf hashes, with `.records`. */
+export function days(n, salt = '') {
+  const records = Array.from({ length: n }, (_, i) => record(i, salt));
+  const leaves = records.map((text) => leaf(Buffer.from(text)));
+  leaves.records = records;
+  return leaves;
+}
+
+export const leafOf = (text) => leaf(Buffer.from(text));
 
 export const checkpoint = (key, size, leaves, origin = ORIGIN) =>
   key.sign(`${origin}\n${size}\n${root(leaves.slice(0, size)).toString('base64')}\n`);
@@ -71,6 +95,12 @@ export function server(state) {
     }
     if (url.endsWith('/anchors/log')) return JSON.stringify({ startup: { state: 'done' } });
     if (url.endsWith('/anchors/checkpoint')) return state.note;
+    const e = /\/anchors\/entries\?from=(\d+)&to=(\d+)$/.exec(url);
+    if (e) {
+      if (state.entriesText !== undefined) return state.entriesText;
+      const [from, to] = [Number(e[1]), Number(e[2])];
+      return JSON.stringify({ origin: ORIGIN, from, to, records: (state.records ?? state.leaves.records).slice(from, to) });
+    }
     const m = /from=(\d+)&to=(\d+)$/.exec(url);
     const from = Number(m[1]);
     const to = Number(m[2]);
