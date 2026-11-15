@@ -57,6 +57,7 @@ most about a day.
 | `log.json` | the log's name and the website's address |
 | `verify.mjs`, `stamp.mjs`, `lib/` | the checks and the stamping, plain Node.js, no dependencies |
 | `compare-logs.mjs` | after a key rotation: proves the new log kept every day of the old one |
+| `previous/` | only in a rotated log's repository: the frozen previous log, which every publication must keep |
 | `test/` | tests of the checks, including every way a dishonest server could lie |
 
 A checkpoint is three lines and a signature (the [C2SP checkpoint format](https://c2sp.org/tlog-checkpoint)):
@@ -121,10 +122,13 @@ formats can check these files.
   after checking that `entries/` reproduce the signed `latest.txt`.
 - **A new key** starts a new log (`orgspirituality.org/anchors/v2`) in a new
   repository; this one is frozen (its workflow switched off) and stays as
-  the record of every day it holds. After the new log's first publication,
-  `node compare-logs.mjs <this repository> <the new one>` proves every day
-  here is in the new log unchanged (only its append time is new). The ORG
-  backend's README, "Key rotation", has every step.
+  the record of every day it holds. The new repository keeps a copy of this
+  one's final `latest.txt` and `entries/` in `previous/`, pinned in its
+  `log.json` (`previous`: origin, key, size, root), and REFUSES every
+  publication unless every day here is in the new log unchanged (only its
+  append time is new). `node compare-logs.mjs <this repository> <the new
+  one>` checks the same by hand. The ORG backend's README, "Key rotation",
+  has every step.
 
 It uses no secret (only GitHub's own token, with permission to write to this
 repository), and the website holds no credential for it.
@@ -154,9 +158,15 @@ repository.
 4. On the server: `ANCHOR_LOG_SIGNING_KEY` (the private key file's line),
    `ANCHOR_LOG_VERIFIER_KEY` (the public key) and `ANCHOR_LOG_PUBLISHED_URL`
    (the raw address of `latest.txt` here, e.g.
-   `https://raw.githubusercontent.com/<org>/org-anchor-checkpoints/main/latest.txt`).
+   `https://raw.githubusercontent.com/<org>/org-anchor-checkpoints/main/latest.txt`),
+   and `ANCHOR_LOG_BOOTSTRAP=1` for the first publication only: until a
+   checkpoint exists here, the address answers 404, and the server signs
+   the first checkpoint only while that flag says the 404 is expected.
 5. Run the workflow once by hand (Actions, "Run workflow") and check it kept
    a first checkpoint.
+6. Remove `ANCHOR_LOG_BOOTSTRAP` from the server. While it is set and a
+   checkpoint is published here, the server signs nothing (on purpose: a
+   404 later on must never again mean "nothing published").
 
 Until then `node verify.mjs` answers "cannot measure" (exit 3) and keeps
 nothing.
