@@ -24,7 +24,8 @@ them, signed with the ORG's key) and keeps it **only if**:
 3. the new days' records themselves, fetched and kept in `entries/`, give
    exactly the signed fingerprint, together with every record already kept
    here. A record must be a day record (hashes, counts and a time) or
-   nothing is kept: no other text can ever reach this repository.
+   nothing is kept: no other text can ever reach this repository. Each day
+   may appear only once in the whole log; a day held twice is refused.
 
 If either check fails, nothing is kept, the run fails, and GitHub emails the
 repository owner. Every kept checkpoint is also time-stamped in Bitcoin
@@ -126,7 +127,7 @@ formats can check these files.
   one's final `latest.txt` and `entries/` in `previous/`, pinned in its
   `log.json` (`previous`: origin, key, size, root), and REFUSES every
   publication unless every day here is in the new log unchanged (only its
-  append time is new). `node compare-logs.mjs <this repository> <the new
+  append time is new), and neither log holds a day twice. `node compare-logs.mjs <this repository> <the new
   one>` checks the same by hand. The ORG backend's README, "Key rotation",
   has every step.
 
