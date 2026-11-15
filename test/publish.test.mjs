@@ -188,3 +188,16 @@ test('gives up after its tries, and at once on a 4xx', async () => {
   const huge = textGetter({ tries: 1, fetchImpl: async () => new Response('x'.repeat(70_000), { status: 200 }) });
   await assert.rejects(huge('https://x/y'), /too large/);
 });
+
+test("L5: a 409 (the server's copy of the log is broken) is REFUSED, exit 1, not cannot-measure", async () => {
+  let calls = 0;
+  const broken = textGetter({
+    fetchImpl: async () => {
+      calls += 1;
+      return new Response('{"message":"inconsistent"}', { status: 409 });
+    },
+    sleep: async () => {},
+  });
+  await assert.rejects(broken('https://x/anchors/proof/consistency?from=1&to=2'), (e) => e.code === 1 && /409/.test(e.message));
+  assert.equal(calls, 1);
+});
