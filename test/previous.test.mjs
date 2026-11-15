@@ -72,5 +72,5 @@ test('M4: REFUSES when the vendored v1 is not the pinned one, or not signed by i
   await refusedWith(v2Repo(v1, { vkey: newKey(V1).vkey }), state, /previous log/);
   const edited = v2Repo(v1);
   fs.writeFileSync(path.join(edited, 'previous', 'entries', '00000001.txt'), record(1, ' edited'));
-  await refusedWith(edited, state, /previous log/);
+  await refusedWith(edited, state, /previous\/entries do not give its latest\.txt/);
 });
