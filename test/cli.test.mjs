@@ -1,3 +1,4 @@
+import os from 'node:os';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -11,8 +12,15 @@ import { checkpoint, days, newKey, repo } from './helpers.mjs';
 const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const json = (name) => JSON.parse(fs.readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf8'));
 
+// Runs a copy of verify.mjs in a scratch folder holding the UNCONFIGURED files, never in this
+// repository: once log.json and log.vkey are filled in, running it here would publish for real.
 test('as committed (no key, no server yet), verify.mjs says it cannot measure: exit 3', () => {
-  const run = spawnSync(process.execPath, [path.join(root, 'verify.mjs')], { encoding: 'utf8' });
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'unconfigured-'));
+  fs.copyFileSync(path.join(root, 'verify.mjs'), path.join(dir, 'verify.mjs'));
+  fs.cpSync(path.join(root, 'lib'), path.join(dir, 'lib'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'log.json'), JSON.stringify({ origin: 'orgspirituality.org/anchors/v1', server: 'https://REPLACE-WITH-THE-API-HOST/api/v1' }));
+  fs.writeFileSync(path.join(dir, 'log.vkey'), 'REPLACE WITH THE PUBLIC KEY PRINTED BY scripts/anchor-log-keygen.mjs\n');
+  const run = spawnSync(process.execPath, [path.join(dir, 'verify.mjs')], { encoding: 'utf8' });
   assert.equal(run.status, 3);
   assert.match(run.stderr, /CANNOT MEASURE/);
 });
