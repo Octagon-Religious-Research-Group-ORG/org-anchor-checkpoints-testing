@@ -1,4 +1,6 @@
-# ORG anchor checkpoints
+# ORG anchor checkpoints — TEST
+
+> ⚠️ **This is the TEST log**, kept for the ORG test site (org-spirituality-testing.netlify.app) and its test database. Its key and days are not the live site's; the live log gets its own repository and key when the Members Area goes live.
 
 This repository is a public, independent copy of the **ORG anchor log**: the
 record that lets anyone check, years from now, that what members wrote on the
