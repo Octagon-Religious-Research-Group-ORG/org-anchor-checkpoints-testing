@@ -1,0 +1,7 @@
+org-anchor-day-v2
+day 2026-11-22
+tree org-anchor-merkle-v2
+root 383527c6bc314d58a72bddbe3acb5452a8f852673d302e1c2cd1a27ac49bd310
+leaves 20
+leafset 5c62fd246ebac449fa744a8f933c1d2130086fd102d35c736d07ff5cdc68f9b0
+appended 2026-11-22T15:16:03.726Z
